@@ -1,28 +1,49 @@
 import React, { useRef, useState } from "react";
-import { Input } from "@/components/ui/input";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowUpFromBracket,
-  faFileArrowUp,
-} from "@fortawesome/free-solid-svg-icons";
+import { faArrowUpFromBracket, faFileArrowUp } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "./ui/button";
 
 const Upload = () => {
   const inputFileRef = useRef(null);
   const [fileName, setFileName] = useState(null);
-  const [file, setFile] = useState("");
+  const [file, setFile] = useState(null);
+
   const handleFileUpload = (event) => {
     const files = event.target.files;
     if (files.length > 0) {
       setFileName(files[0].name);
       setFile(files[0]);
-      let formData = new FormData();
-      formData.append("uploadedFile", file);
-      console.log(formData);
-      console.log(formData.get("uploadedFile"));
     }
   };
-  const handleSendFile = () => {};
+
+  const handleSendFile = async () => {
+    if (!file) {
+      console.error("No file selected");
+      return;
+    }
+
+    let formData = new FormData();
+    formData.append("uploadedFile", file);
+
+    try {
+      const resp = await fetch("http://localhost:3000/retrieve-parsed-data", {
+        method: "post",
+        body: formData,
+      });
+
+      if (resp.ok) {
+        const result = await resp.json(); 
+        console.log("Upload successful:", result);
+        setFileName(null);
+        setFile(null);
+      } else {
+        console.error("Upload failed:", resp.statusText);
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+    }
+  };
+
   const handleTextClick = () => {
     if (inputFileRef.current) {
       inputFileRef.current.click();
@@ -39,6 +60,7 @@ const Upload = () => {
         accept=".pdf"
         className="hidden"
         onChange={handleFileUpload}
+        name="uploadedFile"
       />
       <div
         className="bg-white w-[1000px] h-[250px] flex items-center justify-center -mt-20 border-dashed border-2 border-[#0061ff] cursor-pointer"
@@ -55,12 +77,13 @@ const Upload = () => {
             <Button
               variant="outline"
               className="bg-white gap-2 text-[#0061ff] rounded-lg border-[#0061ff]"
+              type="button" 
+              onClick={handleSendFile} // Trigger file upload
             >
-              {" "}
               <span>
                 <FontAwesomeIcon icon={faArrowUpFromBracket} />
               </span>
-              Upload{" "}
+              Upload
             </Button>
           </div>
           <p className="mt-2 text-green-600 font-italics text-sm">
