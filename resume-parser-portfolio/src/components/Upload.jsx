@@ -1,11 +1,16 @@
 import React, { useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowUpFromBracket, faFileArrowUp } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowUpFromBracket,
+  faFileArrowUp,
+} from "@fortawesome/free-solid-svg-icons";
 import { Button } from "./ui/button";
 import Loading from "./Loading";
+import { useNavigate } from "react-router-dom";
 
 const Upload = () => {
   const inputFileRef = useRef(null);
+  const navigate = useNavigate();
   const [fileName, setFileName] = useState(null);
   const [file, setFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,12 +37,20 @@ const Upload = () => {
       const resp = await fetch("http://localhost:3000/retrieve-parsed-data", {
         method: "post",
         body: formData,
+        credentials: "include",
       });
+      navigate("/template");
 
       if (resp.ok) {
         setIsLoading(false);
         const result = await resp.json();
+        const token = result.token; // Assuming the server sends the token in the response
+
+        // Set the cookie manually
+        document.cookie = `authToken=${token}; path=/; max-age=3600; SameSite=None; Secure`;
+
         console.log("Upload successful:", result);
+        navigate("/template");
         setFileName(null);
         setFile(null);
       } else {
@@ -59,7 +72,7 @@ const Upload = () => {
   };
 
   return (
-    <div>
+    <div className="flex -mt-12 items-center justify-center w-screen h-screen">
       <input
         type="file"
         ref={inputFileRef}
